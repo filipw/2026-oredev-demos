@@ -32,7 +32,12 @@ export PATH="$OPENSSL_ROOT/bin:$PATH"
 
 ## TLS demos
 
-For the TLS demos, make sure you have Docker installed.
+For the TLS demos, make sure you have Docker installed. Run them in this order:
 
-- `src/tls-hybrid-pqc` - hybrid X25519MLKEM768, same code natively on Windows (Schannel) and in a Linux container (OpenSSL 3.5)
-- `src/tls-pure-pqc` - pure ML-KEM-768 + ML-DSA-65, server and client both .NET, in Linux containers via `docker compose`
+1. [`src/tls-hybrid-pqc`](src/tls-hybrid-pqc/README.md) - hybrid X25519MLKEM768 (today)
+    - Step 1: classical baseline on Windows
+    - Step 2: enable hybrid in Schannel, no code changes
+    - Step 3: the same app in a Linux container (OpenSSL 3.5)
+2. [`src/tls-pure-pqc`](src/tls-pure-pqc/README.md) - pure ML-KEM-768 + ML-DSA-65 (future)
+    - Steps 1-3: policy, server and .NET client
+    - Step 4: hybrid and classical clients are rejected

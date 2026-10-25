@@ -1,11 +1,12 @@
 ﻿using Spectre.Console;
 using LibOQS.NET;
 
-var demo = AnsiConsole.Prompt(
+var demo = args is ["compare"] ? "Compare all stacks (ML-KEM + ML-DSA)" : AnsiConsole.Prompt(
     new SelectionPrompt<string>()
         .Title("Choose the [green]demo[/] to run?")
         .AddChoices(
         [
+            "Compare all stacks (ML-KEM + ML-DSA)",
             "ML-KEM (BouncyCastle)",
                 "ML-DSA (BouncyCastle)",
                 "ML-KEM (System.Security.Cryptography API)",
@@ -16,6 +17,9 @@ var demo = AnsiConsole.Prompt(
 
 switch (demo)
 {
+    case "Compare all stacks (ML-KEM + ML-DSA)":
+        CompareDemo.Run();
+        break;
     case "ML-KEM (BouncyCastle)":
         BouncyCastleDemo.RunMlKem();
         break;
