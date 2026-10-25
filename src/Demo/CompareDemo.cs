@@ -23,40 +23,68 @@ public static class CompareDemo
 
     private static readonly Stack[] Stacks =
     [
-        new("System.Security.Cryptography", "OS (CNG / OpenSSL)", () => MLKem.IsSupported && MLDsa.IsSupported, SystemKem, SystemSig),
+        new("System.Security.Cryptography", "OS native",() => MLKem.IsSupported && MLDsa.IsSupported, SystemKem, SystemSig),
         new("BouncyCastle", "fully managed", () => true, BouncyCastleKem, BouncyCastleSig),
         new("LibOQS.NET", "native liboqs", () => KemAlgorithm.MlKem768.IsEnabled() && SigAlgorithm.MlDsa65.IsEnabled(), LibOqsKem, LibOqsSig)
     ];
 
     public static void Run()
     {
-        var kemTable = new Table().Title("ML-KEM-768: keygen + encapsulate + decapsulate")
-            .AddColumns("Stack", "Backend", "Public key", "Private key", "Ciphertext", "Shared secret", "Secrets equal", "Avg time");
-        var sigTable = new Table().Title("ML-DSA-65: keygen + sign + verify")
-            .AddColumns("Stack", "Backend", "Public key", "Private key", "Signature", "Verified", "Avg time");
-
-        foreach (var stack in Stacks)
+        var supported = Stacks.Where(s => s.IsSupported()).ToArray();
+        foreach (var stack in Stacks.Except(supported))
         {
-            if (!stack.IsSupported())
-            {
-                kemTable.AddRow(stack.Name, stack.Kind, "[red]not supported on this platform[/]", "", "", "", "", "");
-                sigTable.AddRow(stack.Name, stack.Kind, "[red]not supported on this platform[/]", "", "", "", "");
-                continue;
-            }
-
-            var (kem, kemTime) = Measure(stack.Kem);
-            kemTable.AddRow(stack.Name, stack.Kind, Bytes(kem.PublicKey), Bytes(kem.PrivateKey), Bytes(kem.CipherText), Bytes(kem.SharedSecret), Check(kem.Ok), kemTime);
-
-            var (sig, sigTime) = Measure(stack.Sig);
-            sigTable.AddRow(stack.Name, stack.Kind, Bytes(sig.PublicKey), Bytes(sig.PrivateKey), Bytes(sig.Signature), Check(sig.Ok), sigTime);
+            Helpers.PrintPanel("Error", [$":broken_heart: {stack.Name} is not supported on this platform - skipping it."]);
         }
 
-        AnsiConsole.Write(kemTable);
-        AnsiConsole.Write(sigTable);
-        AnsiConsole.MarkupLine($"[grey]Avg time = mean of {Iterations} runs after one warm-up run.[/]");
+        Console.WriteLine("");
+        var kem = supported.Select(s => Measure(s.Kem)).ToArray();
+        AnsiConsole.Write(CreateTable("ML-KEM-768: keygen + encapsulate + decapsulate", supported,
+            (":unlocked: Public key", i => Bytes(kem[i].Result.PublicKey)),
+            (":locked: Private key", i => Bytes(kem[i].Result.PrivateKey)),
+            (":locked_with_key: Cipher text", i => Bytes(kem[i].Result.CipherText)),
+            (":key: Shared secret", i => Bytes(kem[i].Result.SharedSecret)),
+            (":handshake: Secrets equal", i => Check(kem[i].Result.Ok)),
+            (":hourglass_not_done: Avg time", i => Ms(kem[i].Ms))));
+        AnsiConsole.Write(CreateChart(supported, kem.Select(r => r.Ms)));
+
+        Console.WriteLine("");
+        Console.WriteLine("");
+        var sig = supported.Select(s => Measure(s.Sig)).ToArray();
+        AnsiConsole.Write(CreateTable("ML-DSA-65: keygen + sign + verify", supported,
+            (":unlocked: Public key", i => Bytes(sig[i].Result.PublicKey)),
+            (":locked: Private key", i => Bytes(sig[i].Result.PrivateKey)),
+            (":memo: Signature", i => Bytes(sig[i].Result.Signature)),
+            (":magnifying_glass_tilted_left: Verified", i => Check(sig[i].Result.Ok)),
+            (":hourglass_not_done: Avg time", i => Ms(sig[i].Ms))));
+        AnsiConsole.Write(CreateChart(supported, sig.Select(r => r.Ms)));
     }
 
-    private static (T Result, string Time) Measure<T>(Func<T> run)
+    private static Table CreateTable(string title, Stack[] stacks, params (string Label, Func<int, string> Value)[] rows)
+    {
+        var table = new Table().RoundedBorder().Title(title).AddColumn("");
+        foreach (var stack in stacks)
+        {
+            table.AddColumn(new TableColumn($"[bold]{stack.Name}[/]{Environment.NewLine}[grey]{stack.Kind}[/]").RightAligned());
+        }
+
+        foreach (var (label, value) in rows)
+        {
+            table.AddRow([label, .. stacks.Select((_, i) => value(i))]);
+        }
+        return table;
+    }
+
+    private static BarChart CreateChart(Stack[] stacks, IEnumerable<double> ms)
+    {
+        var chart = new BarChart().Width(60).Label($"[grey]avg ms per run ({Iterations} runs)[/]");
+        foreach (var (stack, value) in stacks.Zip(ms))
+        {
+            chart.AddItem(stack.Name, Math.Round(value, 2), stack == Stacks[1] ? Color.Orange1 : Color.Green);
+        }
+        return chart;
+    }
+
+    private static (T Result, double Ms) Measure<T>(Func<T> run)
     {
         // warm up (JIT, native library load) before timing
         var result = run();
@@ -65,8 +93,10 @@ public static class CompareDemo
         {
             run();
         }
-        return (result, $"{stopwatch.Elapsed.TotalMilliseconds / Iterations:F2} ms");
+        return (result, stopwatch.Elapsed.TotalMilliseconds / Iterations);
     }
+
+    private static string Ms(double ms) => $"{ms:F2} ms";
 
     private static string Bytes(int length) => $"{length:N0} B";
 
