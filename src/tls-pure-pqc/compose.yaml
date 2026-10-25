@@ -1,0 +1,27 @@
+services:
+  pqc-server:
+    build: .
+    image: tls-pure-pqc
+    volumes:
+      - certs:/certs
+
+  # .NET HttpClient, same image and same OpenSSL policy as the server
+  client:
+    image: tls-pure-pqc
+    command: ["client", "https://pqc-server:8443"]
+    volumes:
+      - certs:/certs:ro
+    depends_on: [pqc-server]
+    profiles: [tools]
+
+  # the .NET SDK image ships the OpenSSL 3.5 CLI, handy for inspecting the handshake
+  openssl:
+    image: mcr.microsoft.com/dotnet/sdk:10.0-resolute
+    entrypoint: ["openssl"]
+    volumes:
+      - certs:/certs:ro
+    depends_on: [pqc-server]
+    profiles: [tools]
+
+volumes:
+  certs:

@@ -1,0 +1,16 @@
+# OpenSSL 3.5+ configuration used by both the server and the client (via OPENSSL_CONF)
+# .NET on Linux delegates TLS to OpenSSL, so this is where the "pure PQC" policy lives - not in the C# code
+openssl_conf = openssl_init
+
+[openssl_init]
+ssl_conf = ssl_configuration
+
+[ssl_configuration]
+system_default = tls_system_default
+
+[tls_system_default]
+MinProtocol = TLSv1.3
+# pure ML-KEM key exchange - no hybrid, no classical (for CNSA 2.0 use MLKEM1024 + ML-DSA-87)
+Groups = MLKEM768
+# only ML-DSA-65 handshake signatures
+SignatureAlgorithms = mldsa65
