@@ -64,13 +64,13 @@ static async Task RunClient(string url)
     Console.WriteLine(await client.GetStringAsync(url));
 }
 
-// .NET has no API for the negotiated TLS 1.3 group. on Windows, Schannel still reports the client's key share
-// size through the obsolete KeyExchangeStrength: X25519 = 255 (bits), X25519MLKEM768 = 1216 (32 + 1184 bytes)
-// OpenSSL reports nothing (0), so on Linux use DevTools -> Security or openssl s_client instead
+
 static string DescribeKeyExchange(int strength) => strength switch
 {
     1216 => "X25519MLKEM768 (hybrid post-quantum)",
     255 => "X25519 (classical)",
+    256 => "P-256 / secp256r1 (classical)",
+    384 => "P-384 / secp384r1 (classical)",
     0 => "not reported by this TLS stack - see DevTools -> Security",
     _ => $"unknown (Schannel reports {strength})"
 };
