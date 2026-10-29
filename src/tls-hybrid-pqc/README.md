@@ -156,17 +156,6 @@ docker run --rm --network pqc-net mcr.microsoft.com/dotnet/sdk:10.0-resolute sh 
 Peer Temp Key: X25519, 253 bits
 ```
 
-What it costs, in ClientHello size (hex): `0x5be` = 1470 bytes hybrid, against `0x126` = 294 bytes classical.
-
-```bash
-docker run --rm --network pqc-net mcr.microsoft.com/dotnet/sdk:10.0-resolute sh -c "for g in X25519MLKEM768 X25519; do openssl s_client -connect tls-hybrid-pqc:8443 -groups \$g -msg </dev/null 2>/dev/null | grep -m1 ClientHello; done"
-```
-
-```
->>> TLS 1.3, Handshake [length 05be], ClientHello
->>> TLS 1.3, Handshake [length 0126], ClientHello
-```
-
 ## Clean up
 
 ```bash
@@ -181,14 +170,3 @@ Disable-TlsEccCurve -Name "X25519_MLKEM768"
 ```
 
 Group Policy overrides the cmdlets if both are used.
-
-## Note: how the app knows the group
-
-.NET has no API for the negotiated TLS 1.3 group. The cipher suite (`TLS_AES_256_GCM_SHA384`) is the same with or without PQC.
-
-On Windows, Schannel still reports the client's key-share size through the obsolete `KeyExchangeStrength` (SYSLIB0058) on `SslStream` and `ITlsHandshakeFeature`:
-
-- `255` for X25519 (bits)
-- `1216` for X25519MLKEM768 (32 + 1184 bytes)
-
-This is undocumented, so treat it as a demo aid, not an API. OpenSSL reports `0`.
