@@ -7,7 +7,7 @@ The code sets no TLS versions, cipher suites or groups. .NET hands TLS to the OS
 One project, two modes:
 
 - `dotnet run -c Release` - Kestrel server on https://localhost:8443
-- `dotnet run -c Release -- client <url>` - `HttpClient` caller
+- `dotnet run -- client <url>` - `HttpClient` caller
 
 All commands run from this folder.
 
@@ -45,7 +45,7 @@ dotnet run -c Release
 Call it from a second terminal:
 
 ```bash
-dotnet run -c Release -- client https://localhost:8443
+dotnet run -- client https://localhost:8443
 ```
 
 Expected:
@@ -63,7 +63,7 @@ Key exchange:   X25519 (classical)
 
 ## Step 2: Enable hybrid PQC (Windows)
 
-Enable the hybrid group and put it first in the preference list:
+Enable the hybrid group and put it **first** in the preference list:
 
 ```powershell
 Enable-TlsEccCurve -Name "X25519_MLKEM768" -Position 0
@@ -80,7 +80,7 @@ NistP384
 Restart the server (Ctrl+C, then `dotnet run -c Release`) and call it again:
 
 ```bash
-dotnet run -c Release -- client https://localhost:8443
+dotnet run -- client https://localhost:8443
 ```
 
 Expected (no code changes):
@@ -101,7 +101,7 @@ Check it in the browser: open https://localhost:8443 in Edge or Chrome and accep
 Check it against a real-world server. The same client shows that outbound calls are PQC too:
 
 ```bash
-dotnet run -c Release -- client https://www.cloudflare.com/cdn-cgi/trace
+dotnet run -- client https://www.cloudflare.com/cdn-cgi/trace
 ```
 
 ```
