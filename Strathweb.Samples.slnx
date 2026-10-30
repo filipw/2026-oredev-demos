@@ -1,15 +1,6 @@
 <Solution>
-  <Folder Name="/aspnetcore-api-ml-dsa/">
-    <Project Path="src/ConsoleClient/ConsoleClient.csproj" />
-    <Project Path="src/IdentityServer/IdentityServer.csproj" />
-    <Project Path="src/SampleApi/SampleApi.csproj" />
-  </Folder>
   <Folder Name="/basic-pqc/">
     <Project Path="src/Demo/Demo.csproj" />
-  </Folder>
-  <Folder Name="/blazor-chat-ml-kem/">
-    <Project Path="src/BlazorWasmClient/BlazorWasmClient.csproj" />
-    <Project Path="src/SignalrServer/SignalrServer.csproj" />
   </Folder>
   <Folder Name="/tls-pqc/">
     <Project Path="src/tls-hybrid-pqc/TlsHybridPqc.csproj" />
